@@ -454,16 +454,19 @@ let isOrbitEnabled = true;
 
 // Instructions display
 const instructionsElement = document.createElement('div');
+instructionsElement.id = 'instructions-panel';
 instructionsElement.style.position = 'absolute';
-instructionsElement.style.bottom = '20px';
-instructionsElement.style.left = '20px';
-instructionsElement.style.color = 'white';
-instructionsElement.style.fontSize = '16px';
-instructionsElement.style.fontFamily = 'Arial, sans-serif';
-instructionsElement.style.textAlign = 'left';
 instructionsElement.innerHTML = `
   <h3>Controls:</h3>
-  <p>O - Toggle orbit camera</p>
+  <ul>
+    <li>O - Toggle Orbit Camera</li>
+    <li>← → - Move left/right (HW06)</li>
+    <li>↑ ↓ - Move forward/backward (HW06)</li>
+    <li>W - - Move up (HW06)</li>
+    <li>S - Move down (HW06)</li>
+    <li>Spacebar - Shoot basketball (HW06)</li>
+    <li>R - Reset ball position (HW06)</li>
+  </ul>
 `;
 document.body.appendChild(instructionsElement);
 
