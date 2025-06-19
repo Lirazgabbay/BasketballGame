@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>HW5</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+
+        /* Scoreboard Styling */
+        #scoreboard-container {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+        }
+        .scoreboard {
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            color: white;
+            margin: 5px;
+        }
+        #mirror-scoreboard {
+            margin-top: 10px;
+        }
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<!-- Scoreboards -->
+<div id="scoreboard-container">
+  <div id="scoreboard" class="scoreboard">Home: 0 - Guest: 0</div>
+</div>
+
+<!-- your entire scene logic lives here -->
+<script type="module" src="./src/hw5.js"></script>
+</body>
+
+</html>
