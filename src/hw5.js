@@ -437,11 +437,95 @@ function updateScoreboard() {
   document.getElementById("scoreboard").innerText = `Home: ${homeScore} - Guest: ${guestScore}`;
 }
 
+function createStadiumScoreboard() {
+  const canvas = Object.assign(document.createElement('canvas'), { width: 1024, height: 256 });
+  const ctx = canvas.getContext('2d');
+  let textures = [];
+
+  const drawScore = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background and frame
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, '#1a1a1a');
+    grad.addColorStop(0.5, '#0a0a0a');
+    grad.addColorStop(1, '#1a1a1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
+    ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+
+    // Main score
+    ctx.shadowColor = '#00ff00';
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = '#00ff00';
+    ctx.font = 'bold 80px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`HOME ${homeScore} - ${guestScore} GUEST`, canvas.width / 2, canvas.height / 2);
+    ctx.shadowBlur = 0;
+
+    // Refresh textures
+    textures.forEach(tex => tex.needsUpdate = true);
+  };
+
+  // Initialize
+  drawScore();
+  const geo = new THREE.PlaneGeometry(12, 3);
+  const createBoardPair = (zPos, frontRot, backRot) => {
+    const tex1 = new THREE.CanvasTexture(canvas);
+    const tex2 = new THREE.CanvasTexture(canvas);
+    textures.push(tex1, tex2);
+    [tex1, tex2].forEach(t => { t.magFilter = t.minFilter = THREE.LinearFilter; });
+
+    const makeBoard = (tex, rotY) => {
+      const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.FrontSide });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(0, 10, zPos);
+      mesh.rotation.y = rotY;
+      scene.add(mesh);
+    };
+
+    makeBoard(tex1, frontRot);
+    makeBoard(tex2, backRot);
+  };
+
+  createBoardPair(-18, 0, Math.PI);
+  createBoardPair(18, Math.PI, 0);
+
+  const supportGeo = new THREE.CylinderGeometry(0.1, 0.1, 8);
+  const beamGeo = new THREE.CylinderGeometry(0.08, 0.08, 10);
+  const supportMat = new THREE.MeshBasicMaterial({ color: 0x444444 });
+
+  [-18, 18].forEach(z => {
+    [[-5, 6], [5, 6]].forEach(([x, y]) => {
+      const s = new THREE.Mesh(supportGeo, supportMat);
+      s.position.set(x, y, z);
+      scene.add(s);
+    });
+    const beam = new THREE.Mesh(beamGeo, supportMat);
+    beam.position.set(0, 2, z);
+    beam.rotation.z = Math.PI / 2;
+    scene.add(beam);
+  });
+
+  // Wrap update
+  const prevUpdate = updateScoreboard;
+  updateScoreboard = () => {
+    prevUpdate();
+    drawScore();
+  };
+}
+
 createBasketballCourt(); // Create all elements
 createBasketball();
 createBleachers();
 createBleachersMirror();
 updateScoreboard();
+createStadiumScoreboard();
+
 
 // Set camera position for better view
 const cameraTranslate = new THREE.Matrix4();
