@@ -402,9 +402,15 @@ function createBasketball() {
       ));
     }
     verticalSeamGeometry.setFromPoints(verticalPoints);
-    const verticalSeam = new THREE.Line(verticalSeamGeometry, seamMaterial);
-    verticalSeam.position.copy(ball.position);
-    scene.add(verticalSeam);
+    const torus = new THREE.Mesh(
+    new THREE.TorusGeometry(BASKETBALL_RADIUS, 0.005, 8, 100, Math.PI * 2),
+    new THREE.MeshPhongMaterial({ color: 0x000000 })
+  );
+  torus.rotation.y = angleOffset;
+  torus.castShadow = true;
+  torus.receiveShadow = true;
+  torus.position.copy(ball.position);
+  scene.add(torus);
   }
 
   const horizontalSeamGeometry = new THREE.BufferGeometry();
@@ -418,9 +424,15 @@ function createBasketball() {
     ));
   }
   horizontalSeamGeometry.setFromPoints(horizontalPoints);
-  const horizontalSeam = new THREE.Line(horizontalSeamGeometry, seamMaterial);
-  horizontalSeam.position.copy(ball.position);
-  scene.add(horizontalSeam);
+  const horizontalTorus = new THREE.Mesh(
+  new THREE.TorusGeometry(BASKETBALL_RADIUS, 0.005, 8, 100),
+  new THREE.MeshPhongMaterial({ color: 0x000000 })
+);
+horizontalTorus.rotation.x = Math.PI / 2;
+horizontalTorus.castShadow = true;
+horizontalTorus.receiveShadow = true;
+horizontalTorus.position.copy(ball.position);
+scene.add(horizontalTorus);
 }
 
 function createBleachers() {
