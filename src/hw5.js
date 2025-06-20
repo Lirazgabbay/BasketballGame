@@ -39,6 +39,7 @@ function createBasketballCourt() {
   });
   const court = new THREE.Mesh(courtGeometry, courtMaterial);
   court.receiveShadow = true;
+  court.castShadow = true;
   scene.add(court);
 
   // Note: All court lines, hoops, and other elements have been removed
@@ -66,11 +67,13 @@ function createBasketballCourt() {
   const leftPole = new THREE.Mesh(poleGeometry, poleMaterial);
   leftPole.position.set(-14 - poleDistanceBehindCourt, poleHeight / 2, 0);
   leftPole.castShadow = true;
+  leftPole.receiveShadow = true;
   scene.add(leftPole);
   // Right pole (behind right baseline)
   const rightPole = new THREE.Mesh(poleGeometry, poleMaterial);
   rightPole.position.set(14 + poleDistanceBehindCourt, poleHeight / 2, 0);
   rightPole.castShadow = true;
+  rightPole.receiveShadow = true;
   scene.add(rightPole);
 
   // SUPPORT ARM SECTION
@@ -84,6 +87,7 @@ function createBasketballCourt() {
       0
   );
   leftArm.castShadow = true;
+  leftArm.receiveShadow = true;
   scene.add(leftArm);
   // Right support arm (extends from right pole towards court)
   const rightArm = new THREE.Mesh(armGeometry, armMaterial);
@@ -93,6 +97,7 @@ function createBasketballCourt() {
       0
   );
   rightArm.castShadow = true;
+  rightArm.receiveShadow = true;
   scene.add(rightArm);
 
   //More detailed hoop models - branded backboards
@@ -124,12 +129,14 @@ function createBasketballCourt() {
   leftRim.position.set(-14 + (RIM_RADIUS + backboardThickness), RIM_HEIGHT, 0);
   leftRim.rotation.x = Math.PI / 2;
   leftRim.castShadow = true;
+  leftRim.receiveShadow = true;
   scene.add(leftRim);
   // Right rim
   const rightRim = new THREE.Mesh(rimGeometry, rimMaterial);
   rightRim.position.set(14 - (RIM_RADIUS + backboardThickness), RIM_HEIGHT, 0);
   rightRim.rotation.x = Math.PI / 2;
   rightRim.castShadow = true;
+  rightRim.receiveShadow = true;
   scene.add(rightRim);
 
   function createRealisticChainNet(x, y, z) {
@@ -160,6 +167,7 @@ function createBasketballCourt() {
       link.rotation.z = (j % 2 === 1) ? Math.PI / 2 : 0;
       link.rotation.y = Math.random() * 0.3 - 0.15;
       link.castShadow = true;
+      link.receiveShadow = true;
       netGroup.add(link);
     }
     verticalPoints.push(strandPoints);
@@ -172,6 +180,8 @@ function createBasketballCourt() {
       const connectorLength = p1.distanceTo(p2);
       const connectorGeometry = new THREE.CylinderGeometry(linkRadius / 2, linkRadius / 2, connectorLength, 8);
       const connector = new THREE.Mesh(connectorGeometry, chainMaterial);
+      connector.castShadow = true;
+      connector.receiveShadow = true;
       const midPoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
       connector.position.copy(midPoint);
       connector.lookAt(p2);
@@ -193,6 +203,8 @@ function createBasketballCourt() {
   const centerLineGeometry = new THREE.BoxGeometry(lineWidth, lineHeight, COURT_WIDTH);
   const centerLine = new THREE.Mesh(centerLineGeometry, lineMaterial);
   centerLine.position.set(0, 0.11, 0);  // slightly above court surface (0.2 court thickness + 0.01 gap)
+  centerLine.castShadow = true;
+  centerLine.receiveShadow = true;
   scene.add(centerLine);
 
   // Center circle
@@ -203,6 +215,8 @@ function createBasketballCourt() {
       64
   );
   const centerCircle = new THREE.Mesh(centerCircleGeometry, lineMaterial);
+  centerCircle.castShadow = true;
+  centerCircle.receiveShadow = true;
   // Rotate to lie flat on court (facing up)
   centerCircle.rotation.x = -Math.PI / 2;
   // Position slightly above floor to avoid z-fighting
@@ -216,11 +230,15 @@ function createBasketballCourt() {
       THREE_POINT_RADIUS - 0.025, THREE_POINT_RADIUS + 0.025, 64, 64, 0, Math.PI
   );
   const leftThreePoint = new THREE.Mesh(arcGeometry, lineMaterial);
+  leftThreePoint.castShadow = true;
+  leftThreePoint.receiveShadow = true;
   leftThreePoint.rotation.x = -Math.PI / 2;
   leftThreePoint.rotation.z = -Math.PI / 2;
   leftThreePoint.position.set(leftArcX, 0.11, 0);
   scene.add(leftThreePoint);
   const rightThreePoint = new THREE.Mesh(arcGeometry, lineMaterial);
+  rightThreePoint.castShadow = true;
+  rightThreePoint.receiveShadow = true;
   rightThreePoint.rotation.x = -Math.PI / 2;
   rightThreePoint.rotation.z = Math.PI / 2;
   rightThreePoint.position.set(rightArcX, 0.11, 0);
@@ -231,11 +249,15 @@ function createBasketballCourt() {
       FREE_THROW_CIRCLE_RADIUS - 0.025, FREE_THROW_CIRCLE_RADIUS + 0.025, 64, 64, 0, Math.PI
   );
   const leftKeyCircle = new THREE.Mesh(freeThrowGeometry, lineMaterial);
+  leftKeyCircle.castShadow = true;
+  leftKeyCircle.receiveShadow = true;
   leftKeyCircle.rotation.x = -Math.PI / 2;
   leftKeyCircle.rotation.z = -Math.PI / 2;
   leftKeyCircle.position.set(-14 + keyLength, 0.11, 0);
   scene.add(leftKeyCircle);
   const rightKeyCircle = new THREE.Mesh(freeThrowGeometry, lineMaterial);
+  rightKeyCircle.castShadow = true;
+  rightKeyCircle.receiveShadow = true;
   rightKeyCircle.rotation.x = -Math.PI / 2;
   rightKeyCircle.rotation.z = Math.PI / 2;
   rightKeyCircle.position.set(14 - keyLength, 0.11, 0);
@@ -286,22 +308,34 @@ function createBasketballCourt() {
   const keySideGeometry = new THREE.BoxGeometry(lineWidth, lineHeight, keyWidth);
   // LEFT key
   const leftKeyTop = new THREE.Mesh(keyTopGeometry, lineMaterial);
+  leftKeyTop.castShadow = true;
+  leftKeyTop.receiveShadow = true;
   leftKeyTop.position.set(-14 + keyLength / 2, 0.11, keyWidth / 2);
   scene.add(leftKeyTop);
   const leftKeyBottom = new THREE.Mesh(keyTopGeometry, lineMaterial);
+  leftKeyBottom.castShadow = true;
+  leftKeyBottom.receiveShadow = true;
   leftKeyBottom.position.set(-14 + keyLength / 2, 0.11, -keyWidth / 2);
   scene.add(leftKeyBottom);
   const leftKeyFarSide = new THREE.Mesh(keySideGeometry, lineMaterial);
+  leftKeyFarSide.castShadow = true;
+  leftKeyFarSide.receiveShadow = true;
   leftKeyFarSide.position.set(-14 + keyLength, 0.11, 0);
   scene.add(leftKeyFarSide);
   // RIGHT key
   const rightKeyTop = new THREE.Mesh(keyTopGeometry, lineMaterial);
+  rightKeyTop.castShadow = true;
+  rightKeyTop.receiveShadow = true;
   rightKeyTop.position.set(14 - keyLength / 2, 0.11, keyWidth / 2);
   scene.add(rightKeyTop);
   const rightKeyBottom = new THREE.Mesh(keyTopGeometry, lineMaterial);
+  rightKeyBottom.castShadow = true;
+  rightKeyBottom.receiveShadow = true;
   rightKeyBottom.position.set(14 - keyLength / 2, 0.11, -keyWidth / 2);
   scene.add(rightKeyBottom);
   const rightKeyFarSide = new THREE.Mesh(keySideGeometry, lineMaterial);
+  rightKeyFarSide.castShadow = true;
+  rightKeyFarSide.receiveShadow = true;
   rightKeyFarSide.position.set(14 - keyLength, 0.11, 0);
   scene.add(rightKeyFarSide);
 
@@ -313,17 +347,25 @@ function createBasketballCourt() {
   // Side boundaries (long sides)
   const sideBoundaryGeometry = new THREE.BoxGeometry(COURT_LENGTH, boundaryLineHeight, boundaryLineWidth);
   const topBoundary = new THREE.Mesh(sideBoundaryGeometry, lineMaterial);
+  topBoundary.castShadow = true;
+  topBoundary.receiveShadow = true;
   topBoundary.position.set(0, boundaryY, COURT_WIDTH / 2);
   scene.add(topBoundary);
   const bottomBoundary = new THREE.Mesh(sideBoundaryGeometry, lineMaterial);
+  bottomBoundary.castShadow = true;
+  bottomBoundary.receiveShadow = true;
   bottomBoundary.position.set(0, boundaryY, -COURT_WIDTH / 2);
   scene.add(bottomBoundary);
   // End boundaries (short sides)
   const endBoundaryGeometry = new THREE.BoxGeometry(boundaryLineWidth, boundaryLineHeight, COURT_WIDTH);
   const leftBoundary = new THREE.Mesh(endBoundaryGeometry, lineMaterial);
+  leftBoundary.castShadow = true;
+  leftBoundary.receiveShadow = true;
   leftBoundary.position.set(-COURT_LENGTH / 2, boundaryY, 0);
   scene.add(leftBoundary);
   const rightBoundary = new THREE.Mesh(endBoundaryGeometry, lineMaterial);
+  rightBoundary.castShadow = true;
+  rightBoundary.receiveShadow = true;
   rightBoundary.position.set(COURT_LENGTH / 2, boundaryY, 0);
   scene.add(rightBoundary);
 
@@ -396,6 +438,8 @@ function createBleachers() {
     for (let seat = 0; seat < seatsPerRow; seat++) {
       const geometry = new THREE.BoxGeometry(seatWidth, seatHeight, seatDepth);
       const mesh = new THREE.Mesh(geometry, seatMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       const x = startX + seat * (seatWidth + 0.05);
       const y = row * seatHeight;
       const z = startZ + row * (seatDepth + 0.1);
@@ -421,6 +465,8 @@ function createBleachersMirror() {
     for (let seat = 0; seat < seatsPerRow; seat++) {
       const geometry = new THREE.BoxGeometry(seatWidth, seatHeight, seatDepth);
       const mesh = new THREE.Mesh(geometry, seatMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       const x = startX + seat * (seatWidth + 0.05);
       const y = row * seatHeight;
       const z = startZ - row * (seatDepth + 0.1); // negative offset for mirror
@@ -483,6 +529,8 @@ function createStadiumScoreboard() {
     const makeBoard = (tex, rotY) => {
       const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.FrontSide });
       const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       mesh.position.set(0, 10, zPos);
       mesh.rotation.y = rotY;
       scene.add(mesh);
@@ -502,10 +550,14 @@ function createStadiumScoreboard() {
   [-18, 18].forEach(z => {
     [[-5, 6], [5, 6]].forEach(([x, y]) => {
       const s = new THREE.Mesh(supportGeo, supportMat);
+      s.castShadow = true;
+      s.receiveShadow = true;
       s.position.set(x, y, z);
       scene.add(s);
     });
     const beam = new THREE.Mesh(beamGeo, supportMat);
+    beam.castShadow = true;
+    beam.receiveShadow = true;
     beam.position.set(0, 2, z);
     beam.rotation.z = Math.PI / 2;
     scene.add(beam);
