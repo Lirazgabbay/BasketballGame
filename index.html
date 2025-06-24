@@ -4,7 +4,10 @@
     <meta charset="utf-8">
     <title>HW5</title>
     <style>
-        body { margin: 0; overflow: hidden; }
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
 
         /* Scoreboard Styling */
         #scoreboard-container {
@@ -14,25 +17,27 @@
             text-align: center;
             z-index: 10;
         }
+
         .scoreboard {
             font-size: 24px;
             font-family: Arial, sans-serif;
             color: white;
             margin: 5px;
         }
+
         #mirror-scoreboard {
             margin-top: 10px;
         }
 
     </style>
-        <link rel="stylesheet" href="./src/instructions.css">
+    <link rel="stylesheet" href="./src/instructions.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
 <!-- Scoreboards -->
 <div id="scoreboard-container">
-  <div id="scoreboard" class="scoreboard">Home: 0 - Guest: 0</div>
+    <div id="scoreboard" class="scoreboard">Home: 0 - Guest: 0</div>
 </div>
 
 <!-- your entire scene logic lives here -->
