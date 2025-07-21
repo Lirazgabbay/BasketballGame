@@ -1,0 +1,32 @@
+/* Power Meter Styles */
+.power-meter-container {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 28px;
+  background: #222;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+.power-meter-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0f0, #ff0, #f00);
+  border-radius: 8px;
+  transition: width 0.1s;
+}
+.power-meter-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-weight: bold;
+  font-size: 18px;
+  text-shadow: 0 1px 2px #000;
+} 

@@ -346,6 +346,30 @@ const BASKETBALL_DAMPING = 0.85;
 const BASKETBALL_EPSILON = 0.001;
 let keyState = { left: false, right: false, up: false, down: false };
 
+// Shot power state
+let shotPower = 0.5; // Start at 50%
+const SHOT_POWER_MIN = 0.0;
+const SHOT_POWER_MAX = 1.0;
+const SHOT_POWER_STEP = 0.01;
+
+// Create power meter UI
+const powerMeterContainer = document.createElement('div');
+powerMeterContainer.className = 'power-meter-container';
+const powerMeterBar = document.createElement('div');
+powerMeterBar.className = 'power-meter-bar';
+powerMeterBar.style.width = (shotPower * 100) + '%'; 
+const powerMeterLabel = document.createElement('span');
+powerMeterLabel.className = 'power-meter-label';
+powerMeterLabel.innerText = 'Power: ' + Math.round(shotPower * 100) + '%';
+powerMeterContainer.appendChild(powerMeterBar);
+powerMeterContainer.appendChild(powerMeterLabel);
+document.body.appendChild(powerMeterContainer);
+
+function updatePowerMeter() {
+  powerMeterBar.style.width = (shotPower * 100) + '%';
+  powerMeterLabel.innerText = 'Power: ' + Math.round(shotPower * 100) + '%';
+}
+
 function createBasketball() {
   const textureLoader = new THREE.TextureLoader();
   const basketballTexture = textureLoader.load('./src/basketball_texture.jpg');
@@ -580,6 +604,15 @@ function handleKeyDown(e) {
   if (e.key === "ArrowRight") keyState.right = true;
   if (e.key === "ArrowUp") keyState.up = true;
   if (e.key === "ArrowDown") keyState.down = true;
+  // Shot power control
+  if (e.key === "w" || e.key === "W") {
+    shotPower = Math.min(SHOT_POWER_MAX, shotPower + SHOT_POWER_STEP);
+    updatePowerMeter();
+  }
+  if (e.key === "s" || e.key === "S") {
+    shotPower = Math.max(SHOT_POWER_MIN, shotPower - SHOT_POWER_STEP);
+    updatePowerMeter();
+  }
 }
 function handleKeyUp(e) {
   if (e.key === "ArrowLeft") keyState.left = false;
@@ -627,6 +660,7 @@ function animate() {
     basketballGroup.position.x = Math.max(-COURT_HALF_LENGTH + BASKETBALL_RADIUS, Math.min(COURT_HALF_LENGTH - BASKETBALL_RADIUS, basketballGroup.position.x));
     basketballGroup.position.z = Math.max(-COURT_HALF_WIDTH + BASKETBALL_RADIUS, Math.min(COURT_HALF_WIDTH - BASKETBALL_RADIUS, basketballGroup.position.z));
   }
+  updatePowerMeter();
   renderer.render(scene, camera);
 }
 
