@@ -45,10 +45,10 @@ function createBasketballCourt() {
   // Students will need to implement these features
 
   // PARAMETERS
-  const poleHeight = 4.0; // 4 meters tall
-  const poleRadius = 0.1; // 10cm radius
-  const armLength = 1.2;  // 1.2 meters arm length
-  const poleDistanceBehindCourt = 1.2; // poles placed 1.2 meters behind baseline
+  const poleHeight = 4.0; 
+  const poleRadius = 0.1; 
+  const armLength = 1.2;  
+  const poleDistanceBehindCourt = 1.2; 
   const backboardWidth = 2.4;
   const backboardHeight = 1.4;
   const backboardThickness = 0.05;
@@ -92,7 +92,7 @@ function createBasketballCourt() {
   scene.add(rightArm);
 
   //More detailed hoop models - branded backboards
-  const backboardTexture = textureLoader.load('src/backboard_brand.jpg');  // תמונה שאתה מוסיף
+  const backboardTexture = textureLoader.load('src/backboard_brand.jpg');  
   const backboardGeometry = new THREE.BoxGeometry(backboardThickness, backboardHeight, backboardWidth);
   const backboardMaterial = new THREE.MeshPhongMaterial({
     map: backboardTexture, transparent: true, opacity: 0.8
@@ -112,7 +112,7 @@ function createBasketballCourt() {
 
   // RIM section
   const rimGeometry = new THREE.TorusGeometry(RIM_RADIUS, 0.04, 16, 64);
-  const rimMaterial = new THREE.MeshPhongMaterial({color: 0xff6600});  // Orange
+  const rimMaterial = new THREE.MeshPhongMaterial({color: 0xff6600});  
   // Left rim
   const leftRim = new THREE.Mesh(rimGeometry, rimMaterial);
   leftRim.position.set(-14 + (RIM_RADIUS + backboardThickness), RIM_HEIGHT, 0);
@@ -190,21 +190,18 @@ function createBasketballCourt() {
   const lineMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
   const centerLineGeometry = new THREE.BoxGeometry(lineWidth, lineHeight, COURT_WIDTH);
   const centerLine = new THREE.Mesh(centerLineGeometry, lineMaterial);
-  centerLine.position.set(0, 0.11, 0);  // slightly above court surface (0.2 court thickness + 0.01 gap)
+  centerLine.position.set(0, 0.11, 0);  
   centerLine.castShadow = true;
   centerLine.receiveShadow = true;
   scene.add(centerLine);
 
-  // Center circle
-  const CENTER_CIRCLE_RADIUS = 1.8;  // standard size (1.8m radius)
+  const CENTER_CIRCLE_RADIUS = 1.8;  
   const centerCircleGeometry = new THREE.RingGeometry(CENTER_CIRCLE_RADIUS - 0.025, CENTER_CIRCLE_RADIUS + 0.025, 64);
   const centerCircle = new THREE.Mesh(centerCircleGeometry, lineMaterial);
   centerCircle.castShadow = true;
   centerCircle.receiveShadow = true;
-  // Rotate to lie flat on court (facing up)
   centerCircle.rotation.x = -Math.PI / 2;
-  // Position slightly above floor to avoid z-fighting
-  centerCircle.position.y = 0.11;  // same as center line height
+  centerCircle.position.y = 0.11;  
   scene.add(centerCircle);
 
   // THREE POINT ARCS
@@ -243,11 +240,10 @@ function createBasketballCourt() {
   rightKeyCircle.position.set(14 - keyLength, 0.11, 0);
   scene.add(rightKeyCircle);
 
-  // Dashed Free Throw Semi-Circle (NBA style) -- LEFT SIDE
   const dashedSegments = 16;
-  const totalAngle = Math.PI; // Full semi-circle (180 degrees)
-  const dashAngle = totalAngle / (dashedSegments * 2); // Account for gaps
-  const dashGap = dashAngle; // Equal dash and gap sizes
+  const totalAngle = Math.PI; 
+  const dashAngle = totalAngle / (dashedSegments * 2); 
+  const dashGap = dashAngle; 
 
   for (let i = 0; i < dashedSegments; i++) {
     const startAngle = i * (dashAngle + dashGap);
@@ -306,10 +302,10 @@ function createBasketballCourt() {
   scene.add(rightKeyFarSide);
 
   // COURT BOUNDARY LINES (Sidelines and Baselines)
-  const COURT_LENGTH = 28; // Full length of court (already used earlier for court floor)
+  const COURT_LENGTH = 28;
   const boundaryLineWidth = 0.07;
   const boundaryLineHeight = 0.02;
-  const boundaryY = 0.11; // same height as other lines
+  const boundaryY = 0.11; 
   // Side boundaries (long sides)
   const sideBoundaryGeometry = new THREE.BoxGeometry(COURT_LENGTH, boundaryLineHeight, boundaryLineWidth);
   const topBoundary = new THREE.Mesh(sideBoundaryGeometry, lineMaterial);
@@ -337,52 +333,57 @@ function createBasketballCourt() {
 
 }
 
+// Global basketball group and movement state
+let basketballGroup = null;
+let basketball = null;
+let basketballVelocity = { x: 0, z: 0 };
+const BASKETBALL_RADIUS = 0.12; 
+const COURT_HALF_LENGTH = 14; 
+const COURT_HALF_WIDTH = 7.5; 
+const BASKETBALL_Y = 2 + BASKETBALL_RADIUS;  
+const BASKETBALL_SPEED = 6; 
+const BASKETBALL_DAMPING = 0.85; 
+const BASKETBALL_EPSILON = 0.001;
+let keyState = { left: false, right: false, up: false, down: false };
+
 function createBasketball() {
   const textureLoader = new THREE.TextureLoader();
   const basketballTexture = textureLoader.load('./src/basketball_texture.jpg');
-  const BASKETBALL_RADIUS = 0.12;
   const ballGeometry = new THREE.SphereGeometry(BASKETBALL_RADIUS, 64, 64);
   const ballMaterial = new THREE.MeshPhongMaterial({
     map: basketballTexture, shininess: 50, specular: 0x333333
   });
-  const ball = new THREE.Mesh(ballGeometry, ballMaterial);
-  ball.position.set(0, 2 + BASKETBALL_RADIUS, 0);  // properly above court
-  ball.castShadow = true;
-  ball.receiveShadow = true;
-  scene.add(ball);
+  basketballGroup = new THREE.Group();
+  basketball = new THREE.Mesh(ballGeometry, ballMaterial);
+  basketball.position.set(0, 0, 0); // center of group
+  basketball.castShadow = true;
+  basketball.receiveShadow = true;
+  basketballGroup.add(basketball);
   const seamMaterial = new THREE.LineBasicMaterial({color: 0x000000});
-
   const verticalSeamCount = 2;
   for (let j = 0; j < verticalSeamCount; j++) {
     const angleOffset = (j / verticalSeamCount) * Math.PI;
-    const verticalSeamGeometry = new THREE.BufferGeometry();
-    const verticalPoints = [];
-    for (let i = 0; i <= 128; i++) {
-      const phi = (i / 128) * Math.PI * 2;
-      verticalPoints.push(new THREE.Vector3(BASKETBALL_RADIUS * Math.sin(phi) * Math.cos(angleOffset), BASKETBALL_RADIUS * Math.cos(phi), BASKETBALL_RADIUS * Math.sin(phi) * Math.sin(angleOffset)));
-    }
-    verticalSeamGeometry.setFromPoints(verticalPoints);
-    const torus = new THREE.Mesh(new THREE.TorusGeometry(BASKETBALL_RADIUS, 0.005, 8, 100, Math.PI * 2), new THREE.MeshPhongMaterial({color: 0x000000}));
+    const torus = new THREE.Mesh(
+      new THREE.TorusGeometry(BASKETBALL_RADIUS, 0.005, 8, 100, Math.PI * 2),
+      new THREE.MeshPhongMaterial({color: 0x000000})
+    );
     torus.rotation.y = angleOffset;
     torus.castShadow = true;
     torus.receiveShadow = true;
-    torus.position.copy(ball.position);
-    scene.add(torus);
+    torus.position.set(0, 0, 0); // relative to group center
+    basketballGroup.add(torus);
   }
-
-  const horizontalSeamGeometry = new THREE.BufferGeometry();
-  const horizontalPoints = [];
-  for (let i = 0; i <= 128; i++) {
-    const theta = (i / 128) * Math.PI * 2;
-    horizontalPoints.push(new THREE.Vector3(BASKETBALL_RADIUS * Math.cos(theta), 0, BASKETBALL_RADIUS * Math.sin(theta)));
-  }
-  horizontalSeamGeometry.setFromPoints(horizontalPoints);
-  const horizontalTorus = new THREE.Mesh(new THREE.TorusGeometry(BASKETBALL_RADIUS, 0.005, 8, 100), new THREE.MeshPhongMaterial({color: 0x000000}));
+  const horizontalTorus = new THREE.Mesh(
+    new THREE.TorusGeometry(BASKETBALL_RADIUS, 0.005, 8, 100),
+    new THREE.MeshPhongMaterial({color: 0x000000})
+  );
   horizontalTorus.rotation.x = Math.PI / 2;
   horizontalTorus.castShadow = true;
   horizontalTorus.receiveShadow = true;
-  horizontalTorus.position.copy(ball.position);
-  scene.add(horizontalTorus);
+  horizontalTorus.position.set(0, 0, 0);
+  basketballGroup.add(horizontalTorus);
+  basketballGroup.position.set(0, BASKETBALL_Y, 0);
+  scene.add(basketballGroup);
 }
 
 function createBleachers() {
@@ -431,7 +432,7 @@ function createBleachersMirror() {
       mesh.receiveShadow = true;
       const x = startX + seat * (seatWidth + 0.05);
       const y = row * seatHeight;
-      const z = startZ - row * (seatDepth + 0.1); // negative offset for mirror
+      const z = startZ - row * (seatDepth + 0.1); 
       mesh.position.set(x, y, z);
       scene.add(mesh);
     }
@@ -529,7 +530,6 @@ function createStadiumScoreboard() {
     scene.add(beam);
   });
 
-  // Wrap update
   const prevUpdate = updateScoreboard;
   updateScoreboard = () => {
     prevUpdate();
@@ -537,7 +537,7 @@ function createStadiumScoreboard() {
   };
 }
 
-createBasketballCourt(); // Create all elements
+createBasketballCourt(); 
 createBasketball();
 createBleachers();
 createBleachersMirror();
@@ -545,7 +545,6 @@ updateScoreboard();
 createStadiumScoreboard();
 
 
-// Set camera position for better view
 const cameraTranslate = new THREE.Matrix4();
 cameraTranslate.makeTranslation(0, 15, 30);
 camera.applyMatrix4(cameraTranslate);
@@ -577,18 +576,57 @@ function handleKeyDown(e) {
   if (e.key === "o") {
     isOrbitEnabled = !isOrbitEnabled;
   }
+  if (e.key === "ArrowLeft") keyState.left = true;
+  if (e.key === "ArrowRight") keyState.right = true;
+  if (e.key === "ArrowUp") keyState.up = true;
+  if (e.key === "ArrowDown") keyState.down = true;
 }
-
+function handleKeyUp(e) {
+  if (e.key === "ArrowLeft") keyState.left = false;
+  if (e.key === "ArrowRight") keyState.right = false;
+  if (e.key === "ArrowUp") keyState.up = false;
+  if (e.key === "ArrowDown") keyState.down = false;
+}
 document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
 
 // Animation function
 function animate() {
   requestAnimationFrame(animate);
-
-  // Update controls
   controls.enabled = isOrbitEnabled;
   controls.update();
-
+  // Basketball movement logic (camera-relative)
+  if (basketballGroup) {
+    let moveX = 0, moveZ = 0;
+    if (keyState.left) moveX -= 1;
+    if (keyState.right) moveX += 1;
+    if (keyState.up) moveZ += 1;
+    if (keyState.down) moveZ -= 1;
+    if (moveX !== 0 || moveZ !== 0) {
+      const cameraDir = new THREE.Vector3();
+      camera.getWorldDirection(cameraDir);
+      cameraDir.y = 0;
+      cameraDir.normalize();
+      const right = new THREE.Vector3();
+      right.crossVectors(cameraDir, new THREE.Vector3(0, 1, 0)).normalize();
+      const moveDir = new THREE.Vector3();
+      moveDir.addScaledVector(right, moveX);
+      moveDir.addScaledVector(cameraDir, moveZ);
+      moveDir.normalize();
+      basketballVelocity.x = moveDir.x * BASKETBALL_SPEED;
+      basketballVelocity.z = moveDir.z * BASKETBALL_SPEED;
+    } else {
+      basketballVelocity.x *= BASKETBALL_DAMPING;
+      basketballVelocity.z *= BASKETBALL_DAMPING;
+      if (Math.abs(basketballVelocity.x) < BASKETBALL_EPSILON) basketballVelocity.x = 0;
+      if (Math.abs(basketballVelocity.z) < BASKETBALL_EPSILON) basketballVelocity.z = 0;
+    }
+    const dt = 1 / 60;
+    basketballGroup.position.x += basketballVelocity.x * dt;
+    basketballGroup.position.z += basketballVelocity.z * dt;
+    basketballGroup.position.x = Math.max(-COURT_HALF_LENGTH + BASKETBALL_RADIUS, Math.min(COURT_HALF_LENGTH - BASKETBALL_RADIUS, basketballGroup.position.x));
+    basketballGroup.position.z = Math.max(-COURT_HALF_WIDTH + BASKETBALL_RADIUS, Math.min(COURT_HALF_WIDTH - BASKETBALL_RADIUS, basketballGroup.position.z));
+  }
   renderer.render(scene, camera);
 }
 
