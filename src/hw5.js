@@ -340,7 +340,8 @@ let basketballVelocity = { x: 0, z: 0 };
 const BASKETBALL_RADIUS = 0.12; 
 const COURT_HALF_LENGTH = 14; 
 const COURT_HALF_WIDTH = 7.5; 
-const BASKETBALL_Y = 2 + BASKETBALL_RADIUS;  
+const GROUND_Y = 0.22;  // Court surface level
+const BASKETBALL_Y = 2 + BASKETBALL_RADIUS;  // Initial ball height
 const BASKETBALL_SPEED = 6; 
 const BASKETBALL_DAMPING = 0.85; 
 const BASKETBALL_EPSILON = 0.001;
@@ -812,8 +813,8 @@ function animate() {
       // Boundary collision
       checkBoundaryCollision();
       // --- Realistic ground bounce and rolling for missed shots ---
-      if (basketballGroup.position.y <= BASKETBALL_Y) {
-        basketballGroup.position.y = BASKETBALL_Y;
+      if (basketballGroup.position.y <= GROUND_Y) {
+        basketballGroup.position.y = GROUND_Y;
         // If still moving down, bounce with energy loss
         if (ballPhysicsVelocity.y < 0) {
           ballPhysicsVelocity.y = Math.abs(ballPhysicsVelocity.y) * 0.35;
@@ -824,27 +825,36 @@ function animate() {
         if (Math.abs(ballPhysicsVelocity.y) < 0.5) {
           ballPhysicsVelocity.y = 0;
         }
+        // Check if ball should transition to rolling state
+        const totalSpeed = Math.sqrt(
+          ballPhysicsVelocity.x * ballPhysicsVelocity.x +
+          ballPhysicsVelocity.y * ballPhysicsVelocity.y +
+          ballPhysicsVelocity.z * ballPhysicsVelocity.z
+        );
+        if (totalSpeed < 0.1) {
+          // Ball has come to rest on the ground
+          isShooting = false;
+          resetBasketball();
+        }
+      } else {
+        // Ball is in the air - ensure it's falling
+        if (Math.abs(ballPhysicsVelocity.y) < 0.001) {
+          // If vertical velocity is near zero while in air, force downward motion
+          ballPhysicsVelocity.y = -0.1;
+        }
       }
       // Prevent ball from going below the court
-      if (basketballGroup.position.y < BASKETBALL_Y) {
-        basketballGroup.position.y = BASKETBALL_Y;
+      if (basketballGroup.position.y < GROUND_Y) {
+        basketballGroup.position.y = GROUND_Y;
         ballPhysicsVelocity.y = 0;
       }
       // --- Rolling friction after bounce ---
-      if (basketballGroup.position.y === BASKETBALL_Y && ballPhysicsVelocity.y === 0) {
+      if (basketballGroup.position.y === GROUND_Y && ballPhysicsVelocity.y === 0) {
         ballPhysicsVelocity.x *= 0.92;
         ballPhysicsVelocity.z *= 0.92;
         if (Math.abs(ballPhysicsVelocity.x) < 0.01) ballPhysicsVelocity.x = 0;
         if (Math.abs(ballPhysicsVelocity.z) < 0.01) ballPhysicsVelocity.z = 0;
-        // Only reset when the ball is on the ground AND all velocities (x, y, z) are near zero
-        const totalSpeed = Math.sqrt(ballPhysicsVelocity.x * ballPhysicsVelocity.x +
-                                    ballPhysicsVelocity.y * ballPhysicsVelocity.y +
-                                    ballPhysicsVelocity.z * ballPhysicsVelocity.z);
-        if (totalSpeed < 0.05) {
-          resetBasketball();
-        }
       }
-      // --- End rolling friction ---
       // Safety fallback: reset after timeout if ball never comes to rest
       if (!shotTimeoutId) startShotTimeout();
     } else {
