@@ -352,6 +352,16 @@ const SHOT_POWER_MIN = 0.0;
 const SHOT_POWER_MAX = 1.0;
 const SHOT_POWER_STEP = 0.01;
 
+// Physics and shooting state
+let isShooting = false;
+let ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
+const GRAVITY = -9.8;
+const SHOT_BASE_SPEED = 12;
+const RIM_POSITIONS = [
+  { x: -14 + 0.225 + 0.05, y: 3.05, z: 0 }, // Left rim
+  { x: 14 - 0.225 - 0.05, y: 3.05, z: 0 }   // Right rim
+];
+
 // Create power meter UI
 const powerMeterContainer = document.createElement('div');
 powerMeterContainer.className = 'power-meter-container';
@@ -595,6 +605,92 @@ instructionsElement.innerHTML = `
 `;
 document.body.appendChild(instructionsElement);
 
+function findNearestRim() {
+  const ballPos = basketballGroup.position;
+  let nearestRim = RIM_POSITIONS[0];
+  let minDistance = ballPos.distanceTo(new THREE.Vector3(nearestRim.x, nearestRim.y, nearestRim.z));
+  for (let i = 1; i < RIM_POSITIONS.length; i++) {
+    const rim = RIM_POSITIONS[i];
+    const distance = ballPos.distanceTo(new THREE.Vector3(rim.x, rim.y, rim.z));
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestRim = rim;
+    }
+  }
+  return nearestRim;
+}
+
+function calculateShotVelocity(targetRim, power) {
+  const ballPos = basketballGroup.position;
+  const dx = targetRim.x - ballPos.x;
+  const dy = targetRim.y - ballPos.y;
+  const dz = targetRim.z - ballPos.z;
+  const horizontalDistance = Math.sqrt(dx * dx + dz * dz);
+  // Calculate initial speed based on power
+  const speed = SHOT_BASE_SPEED * (0.5 + power * 1.5);
+  // Calculate time to reach the rim horizontally
+  const t = horizontalDistance / speed;
+  // Calculate required initial vertical velocity to reach the rim height
+  const vy = (dy - 0.5 * GRAVITY * t * t) / t;
+  // Normalize horizontal direction
+  const norm = Math.sqrt(dx * dx + dz * dz);
+  const vx = (dx / norm) * speed;
+  const vz = (dz / norm) * speed;
+  return { x: vx, y: vy, z: vz };
+}
+
+function shootBasketball() {
+  if (isShooting) return;
+  isShooting = true;
+  const targetRim = findNearestRim();
+  ballPhysicsVelocity = calculateShotVelocity(targetRim, shotPower);
+  // Stop any existing movement
+  basketballVelocity.x = 0;
+  basketballVelocity.z = 0;
+}
+
+function resetBasketball() {
+  isShooting = false;
+  ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
+  basketballVelocity = { x: 0, z: 0 };
+  basketballGroup.position.set(0, BASKETBALL_Y, 0);
+  shotPower = 0.5;
+  updatePowerMeter();
+}
+
+function checkRimCollision() {
+  if (!isShooting) return false;
+  const rim = findNearestRim();
+  const dx = basketballGroup.position.x - rim.x;
+  const dz = basketballGroup.position.z - rim.z;
+  const dy = basketballGroup.position.y - rim.y;
+  const distXZ = Math.sqrt(dx * dx + dz * dz);
+  const rimThreshold = 0.04; // vertical tolerance
+  if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
+    if (Math.abs(dy) < rimThreshold) {
+      // Score!
+      resetBasketball();
+      return true;
+    } else if (dy > -0.3 && dy < 0.3) {
+      // Bounce off rim: reflect and dampen velocity
+      const norm = Math.sqrt(dx * dx + dz * dz);
+      if (norm > 0.0001) {
+        const nx = dx / norm;
+        const nz = dz / norm;
+        // Reflect velocity in XZ
+        const dot = ballPhysicsVelocity.x * nx + ballPhysicsVelocity.z * nz;
+        ballPhysicsVelocity.x -= 2 * dot * nx;
+        ballPhysicsVelocity.z -= 2 * dot * nz;
+        ballPhysicsVelocity.x *= 0.5;
+        ballPhysicsVelocity.z *= 0.5;
+        ballPhysicsVelocity.y *= 0.7;
+      }
+    }
+  }
+  
+  return false;
+}
+
 // Handle key events
 function handleKeyDown(e) {
   if (e.key === "o") {
@@ -604,6 +700,14 @@ function handleKeyDown(e) {
   if (e.key === "ArrowRight") keyState.right = true;
   if (e.key === "ArrowUp") keyState.up = true;
   if (e.key === "ArrowDown") keyState.down = true;
+  // ADD THESE LINES:
+  if (e.key === " " || e.code === "Space") {
+    e.preventDefault();
+    shootBasketball();
+  }
+  if (e.key === "r" || e.key === "R") {
+    resetBasketball();
+  }
   // Shot power control
   if (e.key === "w" || e.key === "W") {
     shotPower = Math.min(SHOT_POWER_MAX, shotPower + SHOT_POWER_STEP);
@@ -628,37 +732,127 @@ function animate() {
   requestAnimationFrame(animate);
   controls.enabled = isOrbitEnabled;
   controls.update();
-  // Basketball movement logic (camera-relative)
+  // Basketball movement and physics
   if (basketballGroup) {
-    let moveX = 0, moveZ = 0;
-    if (keyState.left) moveX -= 1;
-    if (keyState.right) moveX += 1;
-    if (keyState.up) moveZ += 1;
-    if (keyState.down) moveZ -= 1;
-    if (moveX !== 0 || moveZ !== 0) {
-      const cameraDir = new THREE.Vector3();
-      camera.getWorldDirection(cameraDir);
-      cameraDir.y = 0;
-      cameraDir.normalize();
-      const right = new THREE.Vector3();
-      right.crossVectors(cameraDir, new THREE.Vector3(0, 1, 0)).normalize();
-      const moveDir = new THREE.Vector3();
-      moveDir.addScaledVector(right, moveX);
-      moveDir.addScaledVector(cameraDir, moveZ);
-      moveDir.normalize();
-      basketballVelocity.x = moveDir.x * BASKETBALL_SPEED;
-      basketballVelocity.z = moveDir.z * BASKETBALL_SPEED;
-    } else {
-      basketballVelocity.x *= BASKETBALL_DAMPING;
-      basketballVelocity.z *= BASKETBALL_DAMPING;
-      if (Math.abs(basketballVelocity.x) < BASKETBALL_EPSILON) basketballVelocity.x = 0;
-      if (Math.abs(basketballVelocity.z) < BASKETBALL_EPSILON) basketballVelocity.z = 0;
-    }
     const dt = 1 / 60;
-    basketballGroup.position.x += basketballVelocity.x * dt;
-    basketballGroup.position.z += basketballVelocity.z * dt;
-    basketballGroup.position.x = Math.max(-COURT_HALF_LENGTH + BASKETBALL_RADIUS, Math.min(COURT_HALF_LENGTH - BASKETBALL_RADIUS, basketballGroup.position.x));
-    basketballGroup.position.z = Math.max(-COURT_HALF_WIDTH + BASKETBALL_RADIUS, Math.min(COURT_HALF_WIDTH - BASKETBALL_RADIUS, basketballGroup.position.z));
+    if (isShooting) {
+      // Physics-based movement during shot
+      ballPhysicsVelocity.y += GRAVITY * dt;
+      basketballGroup.position.x += ballPhysicsVelocity.x * dt;
+      basketballGroup.position.y += ballPhysicsVelocity.y * dt;
+      basketballGroup.position.z += ballPhysicsVelocity.z * dt;
+      // Rotate ball during flight for realism
+      basketball.rotation.x += ballPhysicsVelocity.z * dt * 0.2;
+      basketball.rotation.z -= ballPhysicsVelocity.x * dt * 0.2;
+      // Rim collision/score check
+      if (checkRimCollision()) {
+        // Already handled in checkRimCollision
+      } else {
+        // --- Realistic ground bounce and rolling for missed shots ---
+        let bounced = false;
+        if (basketballGroup.position.y <= BASKETBALL_Y) {
+          basketballGroup.position.y = BASKETBALL_Y;
+          // If still moving down, bounce with energy loss
+          if (ballPhysicsVelocity.y < 0) {
+            ballPhysicsVelocity.y = Math.abs(ballPhysicsVelocity.y) * 0.35;
+            ballPhysicsVelocity.x *= 0.7;
+            ballPhysicsVelocity.z *= 0.7;
+            bounced = true;
+          }
+          // If bounce is weak, stop vertical motion
+          if (Math.abs(ballPhysicsVelocity.y) < 0.5) {
+            ballPhysicsVelocity.y = 0;
+          }
+          // If all velocities are low, stop shooting mode
+          if (Math.abs(ballPhysicsVelocity.y) < 0.2 && 
+              Math.abs(ballPhysicsVelocity.x) < 0.2 && 
+              Math.abs(ballPhysicsVelocity.z) < 0.2) {
+            isShooting = false;
+            ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
+          }
+        }
+        // Prevent ball from going below the court
+        if (basketballGroup.position.y < BASKETBALL_Y) {
+          basketballGroup.position.y = BASKETBALL_Y;
+          ballPhysicsVelocity.y = 0;
+        }
+        // Out of bounds check (keep ball inside court)
+        if (basketballGroup.position.x < -COURT_HALF_LENGTH + BASKETBALL_RADIUS) {
+          basketballGroup.position.x = -COURT_HALF_LENGTH + BASKETBALL_RADIUS;
+          ballPhysicsVelocity.x = -ballPhysicsVelocity.x * 0.5;
+        }
+        if (basketballGroup.position.x > COURT_HALF_LENGTH - BASKETBALL_RADIUS) {
+          basketballGroup.position.x = COURT_HALF_LENGTH - BASKETBALL_RADIUS;
+          ballPhysicsVelocity.x = -ballPhysicsVelocity.x * 0.5;
+        }
+        if (basketballGroup.position.z < -COURT_HALF_WIDTH + BASKETBALL_RADIUS) {
+          basketballGroup.position.z = -COURT_HALF_WIDTH + BASKETBALL_RADIUS;
+          ballPhysicsVelocity.z = -ballPhysicsVelocity.z * 0.5;
+        }
+        if (basketballGroup.position.z > COURT_HALF_WIDTH - BASKETBALL_RADIUS) {
+          basketballGroup.position.z = COURT_HALF_WIDTH - BASKETBALL_RADIUS;
+          ballPhysicsVelocity.z = -ballPhysicsVelocity.z * 0.5;
+        }
+        // --- Rolling friction after bounce ---
+        if (basketballGroup.position.y === BASKETBALL_Y && ballPhysicsVelocity.y === 0) {
+          ballPhysicsVelocity.x *= 0.92;
+          ballPhysicsVelocity.z *= 0.92;
+          if (Math.abs(ballPhysicsVelocity.x) < 0.01) ballPhysicsVelocity.x = 0;
+          if (Math.abs(ballPhysicsVelocity.z) < 0.01) ballPhysicsVelocity.z = 0;
+          // After any shot (hit or miss), reset when the ball comes to rest
+          if (isShooting && ballPhysicsVelocity.x === 0 && ballPhysicsVelocity.z === 0) {
+            resetBasketball();
+          }
+        }
+      }
+      // --- End realistic ground bounce and rolling ---
+      // If shooting mode is over, transfer any remaining velocity to normal movement
+      if (!isShooting && (Math.abs(ballPhysicsVelocity.x) > 0 || Math.abs(ballPhysicsVelocity.z) > 0)) {
+        basketballVelocity.x = ballPhysicsVelocity.x;
+        basketballVelocity.z = ballPhysicsVelocity.z;
+        ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
+      }
+    } else {
+      // Normal movement when not shooting
+      let moveX = 0, moveZ = 0;
+      if (keyState.left) moveX -= 1;
+      if (keyState.right) moveX += 1;
+      if (keyState.up) moveZ += 1;
+      if (keyState.down) moveZ -= 1;
+      if (moveX !== 0 || moveZ !== 0) {
+        const cameraDir = new THREE.Vector3();
+        camera.getWorldDirection(cameraDir);
+        cameraDir.y = 0;
+        cameraDir.normalize();
+        const right = new THREE.Vector3();
+        right.crossVectors(cameraDir, new THREE.Vector3(0, 1, 0)).normalize();
+        const moveDir = new THREE.Vector3();
+        moveDir.addScaledVector(right, moveX);
+        moveDir.addScaledVector(cameraDir, moveZ);
+        moveDir.normalize();
+        basketballVelocity.x = moveDir.x * BASKETBALL_SPEED;
+        basketballVelocity.z = moveDir.z * BASKETBALL_SPEED;
+      } else {
+        basketballVelocity.x *= BASKETBALL_DAMPING;
+        basketballVelocity.z *= BASKETBALL_DAMPING;
+        if (Math.abs(basketballVelocity.x) < BASKETBALL_EPSILON) basketballVelocity.x = 0;
+        if (Math.abs(basketballVelocity.z) < BASKETBALL_EPSILON) basketballVelocity.z = 0;
+      }
+      basketballGroup.position.x += basketballVelocity.x * dt;
+      basketballGroup.position.z += basketballVelocity.z * dt;
+      basketballGroup.position.x = Math.max(-COURT_HALF_LENGTH + BASKETBALL_RADIUS, 
+                                           Math.min(COURT_HALF_LENGTH - BASKETBALL_RADIUS, basketballGroup.position.x));
+      basketballGroup.position.z = Math.max(-COURT_HALF_WIDTH + BASKETBALL_RADIUS, 
+                                           Math.min(COURT_HALF_WIDTH - BASKETBALL_RADIUS, basketballGroup.position.z));
+    }
+    // --- Add rolling friction for realistic stop ---
+    if (!isShooting && basketballGroup.position.y === BASKETBALL_Y) {
+      basketballVelocity.x *= 0.92; // strong friction
+      basketballVelocity.z *= 0.92;
+      if (Math.abs(basketballVelocity.x) < 0.01) basketballVelocity.x = 0;
+      if (Math.abs(basketballVelocity.z) < 0.01) basketballVelocity.z = 0;
+    }
+    // --- End rolling friction ---
   }
   updatePowerMeter();
   renderer.render(scene, camera);
