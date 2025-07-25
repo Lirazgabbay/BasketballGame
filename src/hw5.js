@@ -21,6 +21,7 @@ scene.add(directionalLight);
 renderer.shadowMap.enabled = true;
 directionalLight.castShadow = true;
 
+/** Converts degrees to radians for angle calculations. */
 function degrees_to_radians(degrees) {
   var pi = Math.PI;
   return degrees * (pi / 180);
@@ -376,11 +377,13 @@ powerMeterContainer.appendChild(powerMeterBar);
 powerMeterContainer.appendChild(powerMeterLabel);
 document.body.appendChild(powerMeterContainer);
 
+/** Updates the power meter UI to reflect current shot power level. */
 function updatePowerMeter() {
   powerMeterBar.style.width = (shotPower * 100) + '%';
   powerMeterLabel.innerText = 'Power: ' + Math.round(shotPower * 100) + '%';
 }
 
+/** Creates the basketball with realistic textures and seam details. */
 function createBasketball() {
   const textureLoader = new THREE.TextureLoader();
   const basketballTexture = textureLoader.load('./src/basketball_texture.jpg');
@@ -421,6 +424,7 @@ function createBasketball() {
   scene.add(basketballGroup);
 }
 
+/** Creates bleacher seating on one side of the court. */
 function createBleachers() {
   const COURT_LENGTH = 28;
   const COURT_WIDTH = 15;
@@ -447,6 +451,7 @@ function createBleachers() {
   }
 }
 
+/** Creates mirror image of bleachers on the opposite side of the court. */
 function createBleachersMirror() {
   const COURT_LENGTH = 28;
   const COURT_WIDTH = 15;
@@ -477,10 +482,12 @@ function createBleachersMirror() {
 let homeScore = 0;
 let guestScore = 0;
 
+/** Updates the scoreboard display with current game scores. */
 function updateScoreboard() {
   document.getElementById("scoreboard").innerText = `Home: ${homeScore} - Guest: ${guestScore}`;
 }
 
+/** Creates and positions the stadium scoreboard displays with support structures. */
 function createStadiumScoreboard() {
   const canvas = Object.assign(document.createElement('canvas'), {width: 1024, height: 256});
   const ctx = canvas.getContext('2d');
@@ -606,6 +613,7 @@ instructionsElement.innerHTML = `
 `;
 document.body.appendChild(instructionsElement);
 
+/** Finds the closest basketball rim to the current ball position for shot targeting. */
 function findNearestRim() {
   const ballPos = basketballGroup.position;
   let nearestRim = RIM_POSITIONS[0];
@@ -622,6 +630,10 @@ function findNearestRim() {
 }
 
 function calculateShotVelocity(targetRim, power) {
+  /**
+   * Calculates the initial velocity vector for the basketball shot based on current ball position and target rim.
+   * The returned vector {vx, vy, vz} implicitly represents the shot angle — both horizontal and vertical.
+   */
   const ballPos = basketballGroup.position;
   const dx = targetRim.x - ballPos.x;
   const dy = targetRim.y - ballPos.y;
@@ -655,6 +667,7 @@ function calculateShotVelocity(targetRim, power) {
 let shotTimeoutId = null;
 const BALL_RESET_TIMEOUT = 6000; // ms, fallback in case ball never comes to rest
 
+/** Clears any existing shot timeout to prevent multiple timeouts. */
 function clearShotTimeout() {
   if (shotTimeoutId) {
     clearTimeout(shotTimeoutId);
@@ -669,6 +682,7 @@ function startShotTimeout() {
   }, BALL_RESET_TIMEOUT);
 }
 
+/** Initiates a basketball shot using current power level and nearest rim as target. */
 function shootBasketball() {
   if (isShooting) return;
   isShooting = true;
@@ -679,6 +693,7 @@ function shootBasketball() {
   basketballVelocity.z = 0;
 }
 
+/** Resets the basketball to initial position and state, clearing all velocities and physics state. */
 function resetBasketball() {
   isShooting = false;
   ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
@@ -689,6 +704,7 @@ function resetBasketball() {
   clearShotTimeout();
 }
 
+/** Checks for collision with rim, handling scoring and rebounds with appropriate physics responses. */
 function checkRimCollision() {
   if (!isShooting) return false;
   const rim = findNearestRim();
@@ -722,6 +738,7 @@ function checkRimCollision() {
   return false;
 }
 
+/** Checks and handles ball collisions with court boundaries, applying appropriate bounce effects. */
 function checkBoundaryCollision() {
   let collided = false;
   // X boundaries
