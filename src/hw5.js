@@ -816,9 +816,19 @@ function animate() {
       basketballGroup.position.x += ballPhysicsVelocity.x * dt;
       basketballGroup.position.y += ballPhysicsVelocity.y * dt;
       basketballGroup.position.z += ballPhysicsVelocity.z * dt;
-      // Rotate ball during flight for realism
-      basketball.rotation.x += ballPhysicsVelocity.z * dt * 0.2;
-      basketball.rotation.z -= ballPhysicsVelocity.x * dt * 0.2;
+
+      // Simple, physically correct rotation based on velocity
+      const velocity = new THREE.Vector3(
+        ballPhysicsVelocity.x,
+        ballPhysicsVelocity.y,
+        ballPhysicsVelocity.z
+      );
+      const speed = velocity.length();
+      if (speed > 0.001) {
+        const axis = velocity.clone().cross(new THREE.Vector3(0, 1, 0)).normalize();
+        basketballGroup.rotateOnAxis(axis, speed * dt);
+      }
+
       // Rim collision/score check
       const rimResult = checkRimCollision();
       if (rimResult === 'scored') {
@@ -876,12 +886,18 @@ function animate() {
       if (!shotTimeoutId) startShotTimeout();
     } else {
       clearShotTimeout();
+      if (basketballGroup.position.y > GROUND_Y || Math.abs(ballPhysicsVelocity.y) > 0) {
+        if (Math.abs(ballPhysicsVelocity.y) < 0.001) {
+          ballPhysicsVelocity.y = -0.1;
+        }
+      }
       // Normal movement when not shooting
       let moveX = 0, moveZ = 0;
       if (keyState.left) moveX -= 1;
       if (keyState.right) moveX += 1;
       if (keyState.up) moveZ += 1;
       if (keyState.down) moveZ -= 1;
+      
       if (moveX !== 0 || moveZ !== 0) {
         const cameraDir = new THREE.Vector3();
         camera.getWorldDirection(cameraDir);
@@ -901,12 +917,26 @@ function animate() {
         if (Math.abs(basketballVelocity.x) < BASKETBALL_EPSILON) basketballVelocity.x = 0;
         if (Math.abs(basketballVelocity.z) < BASKETBALL_EPSILON) basketballVelocity.z = 0;
       }
+      
       basketballGroup.position.x += basketballVelocity.x * dt;
       basketballGroup.position.z += basketballVelocity.z * dt;
-      basketballGroup.position.x = Math.max(-COURT_HALF_LENGTH + BASKETBALL_RADIUS, 
-                                           Math.min(COURT_HALF_LENGTH - BASKETBALL_RADIUS, basketballGroup.position.x));
-      basketballGroup.position.z = Math.max(-COURT_HALF_WIDTH + BASKETBALL_RADIUS, 
-                                           Math.min(COURT_HALF_WIDTH - BASKETBALL_RADIUS, basketballGroup.position.z));
+      
+      // Multi-axis rolling rotation
+      const rollSpeed = Math.sqrt(
+        basketballVelocity.x * basketballVelocity.x +
+        basketballVelocity.z * basketballVelocity.z
+      );
+      
+      if (rollSpeed > 0.01) {
+        // Primary roll axis (perpendicular to movement)
+        const rollAxis = new THREE.Vector3(
+          -basketballVelocity.z,
+          0,
+          basketballVelocity.x
+        ).normalize();
+        const rollAngle = (rollSpeed * dt) / BASKETBALL_RADIUS;
+        basketballGroup.rotateOnAxis(rollAxis, rollAngle * 2.0);
+      }
     }
     // --- Add rolling friction for realistic stop ---
     if (!isShooting && basketballGroup.position.y === BASKETBALL_Y) {
