@@ -717,53 +717,51 @@ function shootBasketball() {
   basketballVelocity.z = 0;
 }
 
-/** Resets the basketball to initial position and state, clearing all velocities and physics state. */
+// Update resetBasketball function to handle all state resets
 function resetBasketball() {
-  isShooting = false;
-  ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
-  basketballVelocity = { x: 0, z: 0 };
-  basketballGroup.position.set(0, BASKETBALL_Y, 0);
-  shotPower = 0.5;
-  updatePowerMeter();
-  clearShotTimeout();
+    isShooting = false;
+    shotScored = false;
+    ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
+    basketballVelocity = { x: 0, z: 0 };
+    basketballGroup.position.set(0, BASKETBALL_Y, 0);
+    shotPower = 0.5;
+    updatePowerMeter();
+    clearShotTimeout();
 }
 
-/** Checks for collision with rim, handling scoring and rebounds with appropriate physics responses. */
+// Update checkRimCollision to not reset automatically
 function checkRimCollision() {
-  if (!isShooting) return false;
-  const rim = findNearestRim();
-  const dx = basketballGroup.position.x - rim.x;
-  const dz = basketballGroup.position.z - rim.z;
-  const dy = basketballGroup.position.y - rim.y;
-  const distXZ = Math.sqrt(dx * dx + dz * dz);
-  const rimThreshold = 0.04; // vertical tolerance
-  if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
-    if (Math.abs(dy) < rimThreshold) {
-      if (!shotScored) {  // Only show message once
-        shotScored = true;
-        showMessage("SHOT MADE!", true);
-      }
-      // Score! Let the ball pass through, don't reset yet
-      // Optionally, you could add a score here
-      return 'scored';
-    } else if (dy > -0.3 && dy < 0.3) {
-      // Bounce off rim: reflect and dampen velocity
-      const norm = Math.sqrt(dx * dx + dz * dz);
-      if (norm > 0.0001) {
-        const nx = dx / norm;
-        const nz = dz / norm;
-        // Reflect velocity in XZ
-        const dot = ballPhysicsVelocity.x * nx + ballPhysicsVelocity.z * nz;
-        ballPhysicsVelocity.x -= 2 * dot * nx;
-        ballPhysicsVelocity.z -= 2 * dot * nz;
-        ballPhysicsVelocity.x *= 0.5;
-        ballPhysicsVelocity.z *= 0.5;
-        ballPhysicsVelocity.y *= 0.7;
-      }
-      return 'rebound';
+    if (!isShooting) return false;
+    const rim = findNearestRim();
+    const dx = basketballGroup.position.x - rim.x;
+    const dz = basketballGroup.position.z - rim.z;
+    const dy = basketballGroup.position.y - rim.y;
+    const distXZ = Math.sqrt(dx * dx + dz * dz);
+    const rimThreshold = 0.04;
+    if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
+        if (Math.abs(dy) < rimThreshold) {
+            if (!shotScored) {
+                shotScored = true;
+                showMessage("SHOT MADE!", true);
+            }
+            return 'scored';
+        } else if (dy > -0.3 && dy < 0.3) {
+            // Bounce off rim logic remains unchanged
+            const norm = Math.sqrt(dx * dx + dz * dz);
+            if (norm > 0.0001) {
+                const nx = dx / norm;
+                const nz = dz / norm;
+                const dot = ballPhysicsVelocity.x * nx + ballPhysicsVelocity.z * nz;
+                ballPhysicsVelocity.x -= 2 * dot * nx;
+                ballPhysicsVelocity.z -= 2 * dot * nz;
+                ballPhysicsVelocity.x *= 0.5;
+                ballPhysicsVelocity.z *= 0.5;
+                ballPhysicsVelocity.y *= 0.7;
+            }
+            return 'rebound';
+        }
     }
-  }
-  return false;
+    return false;
 }
 
 /** Checks and handles ball collisions with court boundaries, applying appropriate bounce effects. */
@@ -870,36 +868,23 @@ function animate() {
       // --- Realistic ground bounce and rolling for missed shots ---
       if (basketballGroup.position.y <= GROUND_Y) {
         basketballGroup.position.y = GROUND_Y;
-        if (ballPhysicsVelocity.y < 0 && isShooting && !shotScored) {
-          showMessage("MISSED SHOT", false);
-          shotScored = true;  // Prevent multiple miss messages
-        }
-        // If still moving down, bounce with energy loss
         if (ballPhysicsVelocity.y < 0) {
-          ballPhysicsVelocity.y = Math.abs(ballPhysicsVelocity.y) * 0.35;
-          ballPhysicsVelocity.x *= 0.7;
-          ballPhysicsVelocity.z *= 0.7;
-        }
-        // If bounce is weak, stop vertical motion
-        if (Math.abs(ballPhysicsVelocity.y) < 0.5) {
-          ballPhysicsVelocity.y = 0;
-        }
-        // Check if ball should transition to rolling state
-        const totalSpeed = Math.sqrt(
-          ballPhysicsVelocity.x * ballPhysicsVelocity.x +
-          ballPhysicsVelocity.y * ballPhysicsVelocity.y +
-          ballPhysicsVelocity.z * ballPhysicsVelocity.z
-        );
-        if (totalSpeed < 0.1) {
-          // Ball has come to rest on the ground
-          isShooting = false;
-          resetBasketball();
-        }
-      } else {
-        // Ball is in the air - ensure it's falling
-        if (Math.abs(ballPhysicsVelocity.y) < 0.001) {
-          // If vertical velocity is near zero while in air, force downward motion
-          ballPhysicsVelocity.y = -0.1;
+            if (isShooting && !shotScored) {
+                showMessage("MISSED SHOT", false);
+                shotScored = true;
+            }
+            // Bounce physics
+            ballPhysicsVelocity.y = Math.abs(ballPhysicsVelocity.y) * 0.35;
+            ballPhysicsVelocity.x *= 0.7;
+            ballPhysicsVelocity.z *= 0.7;
+            
+            // If ball has very low energy, just stop it
+            if (Math.abs(ballPhysicsVelocity.y) < 0.1 && 
+                Math.abs(ballPhysicsVelocity.x) < 0.1 && 
+                Math.abs(ballPhysicsVelocity.z) < 0.1) {
+                ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
+                isShooting = false;
+            }
         }
       }
       // Prevent ball from going below the court
