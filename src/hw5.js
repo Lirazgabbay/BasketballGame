@@ -682,10 +682,34 @@ function startShotTimeout() {
   }, BALL_RESET_TIMEOUT);
 }
 
+// Add after UI elements but before game logic
+let shotScored = false;  // Track if current shot was scored
+
+// Add CSS link
+const shotMessagesStyle = document.createElement('link');
+shotMessagesStyle.rel = 'stylesheet';
+shotMessagesStyle.href = 'src/shot-messages.css';
+document.head.appendChild(shotMessagesStyle);
+
+const messageDiv = document.createElement('div');
+messageDiv.id = 'messageDiv';
+document.body.appendChild(messageDiv);
+
+function showMessage(text, isSuccess) {
+    messageDiv.textContent = text;
+    messageDiv.className = isSuccess ? 'success' : 'miss';
+    messageDiv.style.display = 'block';
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+        messageDiv.className = '';
+    }, 2000);
+}
+
 /** Initiates a basketball shot using current power level and nearest rim as target. */
 function shootBasketball() {
   if (isShooting) return;
   isShooting = true;
+  shotScored = false;  // Reset for new shot
   const targetRim = findNearestRim();
   ballPhysicsVelocity = calculateShotVelocity(targetRim, shotPower);
   // Stop any existing movement
@@ -715,6 +739,10 @@ function checkRimCollision() {
   const rimThreshold = 0.04; // vertical tolerance
   if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
     if (Math.abs(dy) < rimThreshold) {
+      if (!shotScored) {  // Only show message once
+        shotScored = true;
+        showMessage("SHOT MADE!", true);
+      }
       // Score! Let the ball pass through, don't reset yet
       // Optionally, you could add a score here
       return 'scored';
@@ -842,6 +870,10 @@ function animate() {
       // --- Realistic ground bounce and rolling for missed shots ---
       if (basketballGroup.position.y <= GROUND_Y) {
         basketballGroup.position.y = GROUND_Y;
+        if (ballPhysicsVelocity.y < 0 && isShooting && !shotScored) {
+          showMessage("MISSED SHOT", false);
+          shotScored = true;  // Prevent multiple miss messages
+        }
         // If still moving down, bounce with energy loss
         if (ballPhysicsVelocity.y < 0) {
           ballPhysicsVelocity.y = Math.abs(ballPhysicsVelocity.y) * 0.35;

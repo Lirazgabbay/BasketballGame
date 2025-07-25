@@ -1,0 +1,47 @@
+#messageDiv {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    padding: 30px 60px;
+    border-radius: 20px;
+    font-family: 'Press Start 2P', cursive, Arial, sans-serif;
+    font-size: 28px;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 0 10px #000;
+    background: rgba(0, 0, 0, 0.7);
+    border: 3px solid white;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+    opacity: 0;
+    z-index: 9999;
+    display: none;
+    animation: popIn 3s ease forwards;
+}
+
+#messageDiv.success {
+    background: linear-gradient(145deg, #28a745, #218838);
+    border-color: #c3e6cb;
+    box-shadow: 0 0 25px rgba(40, 167, 69, 0.8);
+}
+
+#messageDiv.miss {
+    background: linear-gradient(145deg, #dc3545, #bd2130);
+    border-color: #f5c6cb;
+    box-shadow: 0 0 25px rgba(220, 53, 69, 0.8);
+}
+
+/* Animation for showing */
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    60% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
