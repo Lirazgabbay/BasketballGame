@@ -640,12 +640,12 @@ instructionsElement.innerHTML = `
     <h3>Controls:</h3>
     <ul>
         <li>O - Toggle Orbit Camera</li>
-        <li>← → - Move left/right (HW06)</li>
-        <li>↑ ↓ - Move forward/backward (HW06)</li>
-        <li>W - - Move up (HW06)</li>
-        <li>S - Move down (HW06)</li>
-        <li>Spacebar - Shoot basketball (HW06)</li>
-        <li>R - Reset ball position (HW06)</li>
+        <li>← → - Move left/right</li>
+        <li>↑ ↓ - Move forward/backward</li>
+        <li>W - - Move up</li>
+        <li>S - Move down</li>
+        <li>Spacebar - Shoot basketball</li>
+        <li>R - Reset ball position</li>
     </ul>
 `;
 document.body.appendChild(instructionsElement);
