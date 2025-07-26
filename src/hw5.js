@@ -423,7 +423,8 @@ let shotAttempts = 0;
 let shotsMade = 0;
 let totalScore = 0;
 let previousShotMade = false;
-let bonuses = { combo: 0 };
+let bonuses = { combo: 0, swish: 0 };
+let shotTouchedRim = false;
 
 // Add all CSS files from styles folder
 const cssFiles = ['stats-panel.css', 'shot-messages.css', 'power-meter.css', 'controls-panel.css'];
@@ -437,7 +438,6 @@ cssFiles.forEach(file => {
 // Load sound effects
 const shotHitSound = new Audio('src/sounds/shot_hit.mp3');
 const shotMissSound = new Audio('src/sounds/shot_miss.mp3');
-
 const statsPanel = document.createElement('div');
 statsPanel.id = 'stats-panel';
 document.body.appendChild(statsPanel);
@@ -452,6 +452,7 @@ function updateStatsDisplay() {
             <li>Shot Attempts: ${shotAttempts}</li>
             <li>Shooting Percentage: ${accuracy}%</li>
             <li>Combo Bonuses: ${bonuses.combo}</li>
+            <li>Swishes: ${bonuses.swish}</li>
         </ul>
     `;
 }
@@ -757,7 +758,7 @@ function clearShotTimeout() {
 function startShotTimeout() {
   clearShotTimeout();
   shotTimeoutId = setTimeout(() => {
-    resetBasketball();
+    // resetBasketball(); // REMOVED: Ball should remain where it lands
   }, BALL_RESET_TIMEOUT);
 }
 
@@ -784,8 +785,8 @@ function shootBasketball() {
   if (isShooting) return;
   isShooting = true;
   shotScored = false;  // Reset for new shot
+  shotTouchedRim = false;  // Reset rim touch flag for new shot
   shotAttempts++; 
-  console.log(`Shot Attempted! Total Attempts: ${shotAttempts}, Shots Made: ${shotsMade}`);
   updateStatsDisplay(); 
   const targetRim = findNearestRim();
   ballPhysicsVelocity = calculateShotVelocity(targetRim, shotPower);
@@ -805,7 +806,6 @@ function resetBasketball() {
     updatePowerMeter();
     clearShotTimeout();
     clearTrail(); 
-    console.log(`Stats Reset - Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
     updateStatsDisplay();  
 }
 
@@ -853,12 +853,24 @@ function checkRimCollision() {
                 shotsMade++;
                 totalScore += 2;
                 
-                // Check for combo bonus
+                // Check for swish (no rim touch) and combo bonus
                 let messageText = "SHOT MADE!";
+                let isSwish = !shotTouchedRim;
+                
+                if (isSwish) {
+                    bonuses.swish++;
+                    totalScore += 1;
+                    messageText = "SHOT MADE! + SWISH BONUS!";
+                }
+                
                 if (previousShotMade) {
                     bonuses.combo++;
                     totalScore += 1;
-                    messageText = "SHOT MADE! + COMBO BONUS!";
+                    if (isSwish) {
+                        messageText = "SHOT MADE! + SWISH! + COMBO BONUS!";
+                    } else {
+                        messageText = "SHOT MADE! + COMBO BONUS!";
+                    }
                 }
                 
                 // Update team-specific score
@@ -869,10 +881,7 @@ function checkRimCollision() {
                 }
                 
                 showMessage(messageText, true);
-                
                 shotHitSound.play();
-                console.log(`Score: Home ${homeScore} - Guest ${guestScore}`);
-                console.log(`Shot Made! Total Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
                 updateScoreboard();
                 updateStatsDisplay();
                 
@@ -881,6 +890,8 @@ function checkRimCollision() {
             }
             return 'scored';
         } else if (dy > -0.3 && dy < 0.3) {
+            // Ball touched the rim - mark it
+            shotTouchedRim = true;
             // Bounce off rim logic remains unchanged
             const norm = Math.sqrt(dx * dx + dz * dz);
             if (norm > 0.0001) {
@@ -1114,6 +1125,7 @@ controlsPanel.innerHTML = `
   <div class="help-section">
     <h3>Scoring</h3>
     <p>• Shots = 2 points</p>
+    <p>• Swish bonus: +1 point for clean shots (no rim touch)</p>
     <p>• Combo bonus: +1 point for consecutive shots</p>
     <p>• All shots are tracked and counted</p>
   </div>
