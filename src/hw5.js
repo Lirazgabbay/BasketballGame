@@ -359,9 +359,10 @@ let isShooting = false;
 let ballPhysicsVelocity = { x: 0, y: 0, z: 0 };
 const GRAVITY = -9.8;
 const SHOT_BASE_SPEED = 12;
+// Update RIM_POSITIONS with team identification
 const RIM_POSITIONS = [
-  { x: -14 + 0.225 + 0.05, y: 3.05, z: 0 }, // Left rim
-  { x: 14 - 0.225 - 0.05, y: 3.05, z: 0 }   // Right rim
+    { x: -14 + 0.225 + 0.05, y: 3.05, z: 0, team: 'guest' }, // Left rim (Guest)
+    { x: 14 - 0.225 - 0.05, y: 3.05, z: 0, team: 'home' }    // Right rim (Home)
 ];
 
 // scoring stats
@@ -521,7 +522,7 @@ let guestScore = 0;
 
 /** Updates the scoreboard display with current game scores. */
 function updateScoreboard() {
-  document.getElementById("scoreboard").innerText = `Home: ${homeScore} - Guest: ${guestScore}`;
+    document.getElementById("scoreboard").innerText = `HOME ${homeScore} - GUEST ${guestScore}`;
 }
 
 /** Creates and positions the stadium scoreboard displays with support structures. */
@@ -765,47 +766,6 @@ function resetBasketball() {
     updateStatsDisplay();  
 }
 
-// Update checkRimCollision to not reset automatically
-function checkRimCollision() {
-    if (!isShooting) return false;
-    const rim = findNearestRim();
-    const dx = basketballGroup.position.x - rim.x;
-    const dz = basketballGroup.position.z - rim.z;
-    const dy = basketballGroup.position.y - rim.y;
-    const distXZ = Math.sqrt(dx * dx + dz * dz);
-    const rimThreshold = 0.04;
-    if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
-        if (Math.abs(dy) < rimThreshold && ballPhysicsVelocity.y < 0) {
-            if (!shotScored) {
-                shotScored = true;
-                shotsMade++;
-                totalScore += 2;  
-                shotHitSound.play();  // Play hit sound
-                showMessage(`SHOT MADE!`, true);
-                console.log(`Score: ${totalScore}`);
-                console.log(`Shot Made! Total Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
-                updateStatsDisplay(); 
-            }
-            return 'scored';
-        } else if (dy > -0.3 && dy < 0.3) {
-            // Bounce off rim logic remains unchanged
-            const norm = Math.sqrt(dx * dx + dz * dz);
-            if (norm > 0.0001) {
-                const nx = dx / norm;
-                const nz = dz / norm;
-                const dot = ballPhysicsVelocity.x * nx + ballPhysicsVelocity.z * nz;
-                ballPhysicsVelocity.x -= 2 * dot * nx;
-                ballPhysicsVelocity.z -= 2 * dot * nz;
-                ballPhysicsVelocity.x *= 0.5;
-                ballPhysicsVelocity.z *= 0.5;
-                ballPhysicsVelocity.y *= 0.7;
-            }
-            return 'rebound';
-        }
-    }
-    return false;
-}
-
 /** Checks and handles ball collisions with court boundaries, applying appropriate bounce effects. */
 function checkBoundaryCollision() {
   let collided = false;
@@ -832,6 +792,57 @@ function checkBoundaryCollision() {
     collided = true;
   }
   return collided;
+}
+
+// Update checkRimCollision to not reset automatically
+function checkRimCollision() {
+    if (!isShooting) return false;
+    const rim = findNearestRim();
+    const dx = basketballGroup.position.x - rim.x;
+    const dz = basketballGroup.position.z - rim.z;
+    const dy = basketballGroup.position.y - rim.y;
+    const distXZ = Math.sqrt(dx * dx + dz * dz);
+    const rimThreshold = 0.04;
+    if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
+        if (Math.abs(dy) < rimThreshold && ballPhysicsVelocity.y < 0) {
+            if (!shotScored) {
+                shotScored = true;
+                shotsMade++;
+                totalScore += 2;
+                
+                // Update team-specific score
+                if (rim.team === 'home') {
+                    homeScore += 2;
+                    showMessage(`SHOT MADE!`, true);
+                } else {
+                    guestScore += 2;
+                    showMessage(`SHOT MADE!`, true);
+                }
+                
+                shotHitSound.play();
+                console.log(`Score: Home ${homeScore} - Guest ${guestScore}`);
+                console.log(`Shot Made! Total Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
+                updateScoreboard();
+                updateStatsDisplay();
+            }
+            return 'scored';
+        } else if (dy > -0.3 && dy < 0.3) {
+            // Bounce off rim logic remains unchanged
+            const norm = Math.sqrt(dx * dx + dz * dz);
+            if (norm > 0.0001) {
+                const nx = dx / norm;
+                const nz = dz / norm;
+                const dot = ballPhysicsVelocity.x * nx + ballPhysicsVelocity.z * nz;
+                ballPhysicsVelocity.x -= 2 * dot * nx;
+                ballPhysicsVelocity.z -= 2 * dot * nz;
+                ballPhysicsVelocity.x *= 0.5;
+                ballPhysicsVelocity.z *= 0.5;
+                ballPhysicsVelocity.y *= 0.7;
+            }
+            return 'rebound';
+        }
+    }
+    return false;
 }
 
 // Handle key events
