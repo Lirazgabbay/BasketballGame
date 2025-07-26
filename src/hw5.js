@@ -739,7 +739,7 @@ function checkRimCollision() {
     const distXZ = Math.sqrt(dx * dx + dz * dz);
     const rimThreshold = 0.04;
     if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
-        if (Math.abs(dy) < rimThreshold) {
+        if (Math.abs(dy) < rimThreshold && ballPhysicsVelocity.y < 0) {  
             if (!shotScored) {
                 shotScored = true;
                 showMessage("SHOT MADE!", true);
