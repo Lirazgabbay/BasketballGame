@@ -348,6 +348,59 @@ const BASKETBALL_DAMPING = 0.85;
 const BASKETBALL_EPSILON = 0.001;
 let keyState = { left: false, right: false, up: false, down: false };
 
+// Ball trail system
+const TRAIL_LENGTH = 35;  
+const trailPositions = [];
+let trailLine;
+
+function initializeTrail() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(TRAIL_LENGTH * 3);  // xyz for each point
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const material = new THREE.LineBasicMaterial({
+        color: 0xffa500,  
+        transparent: true,
+        opacity: 0.6,
+        linewidth: 2
+    });
+    
+    trailLine = new THREE.Line(geometry, material);
+    scene.add(trailLine);
+}
+
+function updateTrail() {
+    if (!trailLine || !isShooting) return;
+    
+    trailPositions.push(basketballGroup.position.clone());
+    
+    while (trailPositions.length > TRAIL_LENGTH) {
+        trailPositions.shift();
+    }
+    
+    const positions = trailLine.geometry.attributes.position.array;
+    let index = 0;
+    
+    trailPositions.forEach(pos => {
+        positions[index++] = pos.x;
+        positions[index++] = pos.y;
+        positions[index++] = pos.z;
+    });
+    
+    trailLine.geometry.attributes.position.needsUpdate = true;
+    trailLine.geometry.setDrawRange(0, trailPositions.length);
+}
+
+function clearTrail() {
+    trailPositions.length = 0;
+    if (trailLine) {
+        const positions = trailLine.geometry.attributes.position.array;
+        positions.fill(0);
+        trailLine.geometry.attributes.position.needsUpdate = true;
+        trailLine.geometry.setDrawRange(0, 0);
+    }
+}
+
 // Shot power state
 let shotPower = 0.5; // Start at 50%
 const SHOT_POWER_MIN = 0.0;
@@ -623,6 +676,7 @@ createBleachers();
 createBleachersMirror();
 updateScoreboard();
 createStadiumScoreboard();
+initializeTrail();  
 
 
 const cameraTranslate = new THREE.Matrix4();
@@ -747,6 +801,7 @@ function resetBasketball() {
     shotPower = 0.5;
     updatePowerMeter();
     clearShotTimeout();
+    clearTrail(); 
     console.log(`Stats Reset - Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
     updateStatsDisplay();  
 }
@@ -881,6 +936,8 @@ function animate() {
       basketballGroup.position.y += ballPhysicsVelocity.y * dt;
       basketballGroup.position.z += ballPhysicsVelocity.z * dt;
 
+      updateTrail();  
+
       // Simple, physically correct rotation based on velocity
       const velocity = new THREE.Vector3(
         ballPhysicsVelocity.x,
@@ -941,7 +998,7 @@ function animate() {
       // Safety fallback: reset after timeout if ball never comes to rest
       if (!shotTimeoutId) startShotTimeout();
     } else {
-      clearShotTimeout();
+      clearTrail();  
       if (basketballGroup.position.y > GROUND_Y || Math.abs(ballPhysicsVelocity.y) > 0) {
         if (Math.abs(ballPhysicsVelocity.y) < 0.001) {
           ballPhysicsVelocity.y = -0.1;
