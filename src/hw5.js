@@ -364,6 +364,11 @@ const RIM_POSITIONS = [
   { x: 14 - 0.225 - 0.05, y: 3.05, z: 0 }   // Right rim
 ];
 
+// scoring stats
+let shotAttempts = 0;
+let shotsMade = 0;
+let totalScore = 0;
+
 // Create power meter UI
 const powerMeterContainer = document.createElement('div');
 powerMeterContainer.className = 'power-meter-container';
@@ -710,6 +715,8 @@ function shootBasketball() {
   if (isShooting) return;
   isShooting = true;
   shotScored = false;  // Reset for new shot
+  shotAttempts++; 
+  console.log(`Shot Attempted! Total Attempts: ${shotAttempts}, Shots Made: ${shotsMade}`);
   const targetRim = findNearestRim();
   ballPhysicsVelocity = calculateShotVelocity(targetRim, shotPower);
   // Stop any existing movement
@@ -727,6 +734,7 @@ function resetBasketball() {
     shotPower = 0.5;
     updatePowerMeter();
     clearShotTimeout();
+    console.log(`Stats Reset - Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
 }
 
 // Update checkRimCollision to not reset automatically
@@ -739,10 +747,14 @@ function checkRimCollision() {
     const distXZ = Math.sqrt(dx * dx + dz * dz);
     const rimThreshold = 0.04;
     if (distXZ < (0.225 + BASKETBALL_RADIUS)) {
-        if (Math.abs(dy) < rimThreshold && ballPhysicsVelocity.y < 0) {  
+        if (Math.abs(dy) < rimThreshold && ballPhysicsVelocity.y < 0) {
             if (!shotScored) {
                 shotScored = true;
-                showMessage("SHOT MADE!", true);
+                shotsMade++;
+                totalScore += 2;  
+                showMessage(`SHOT MADE!`, true);
+                console.log(`Score: ${totalScore}`);
+                console.log(`Shot Made! Total Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
             }
             return 'scored';
         } else if (dy > -0.3 && dy < 0.3) {
