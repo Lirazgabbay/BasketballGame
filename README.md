@@ -23,7 +23,7 @@
 | Toggle Camera Orbit       | `O`                                |
 
 
-# Description of physics system implementation
+## Description of physics system implementation
 - This simulation applies real-world physics to simulate a realistic basketball shot. The mechanics combine projectile motion, collision response, and rotation using time-based updates (i.e., frame-by-frame animation with ∆t ≈ 1/60s).
 - When a shot is triggered, the basketball follows a parabolic path, governed by kinematic equations:
     - Vertical (Y-axis) Motion — Free Fall with Gravity:
@@ -131,3 +131,8 @@ Adjust shot strength using W/S keys with a visual power meter. Affects ball spee
     - `shot_hit.mp3`
     - `shot_miss.mp3`
 - All located in the `src/` directory.
+
+
+## All project-related videos are available in the following Google Drive folder:  
+
+https://drive.google.com/drive/folders/1fHH6Ily7duPPEbevxlpvLkcNcS-XIr6e?usp=sharing
