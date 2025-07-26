@@ -371,7 +371,7 @@ let shotsMade = 0;
 let totalScore = 0;
 
 // Add all CSS files from styles folder
-const cssFiles = ['stats-panel.css', 'instructions.css', 'shot-messages.css', 'power-meter.css'];
+const cssFiles = ['stats-panel.css', 'shot-messages.css', 'power-meter.css', 'controls-panel.css'];
 cssFiles.forEach(file => {
     const linkElement = document.createElement('link');
     linkElement.rel = 'stylesheet';
@@ -633,22 +633,7 @@ camera.applyMatrix4(cameraTranslate);
 const controls = new OrbitControls(camera, renderer.domElement);
 let isOrbitEnabled = true;
 
-// Instructions display
-const instructionsElement = document.createElement('div');
-instructionsElement.id = 'instructions-panel';
-instructionsElement.innerHTML = `
-    <h3>Controls:</h3>
-    <ul>
-        <li>O - Toggle Orbit Camera</li>
-        <li>← → - Move left/right</li>
-        <li>↑ ↓ - Move forward/backward</li>
-        <li>W - - Move up</li>
-        <li>S - Move down</li>
-        <li>Spacebar - Shoot basketball</li>
-        <li>R - Reset ball position</li>
-    </ul>
-`;
-document.body.appendChild(instructionsElement);
+
 
 /** Finds the closest basketball rim to the current ball position for shot targeting. */
 function findNearestRim() {
@@ -1023,3 +1008,49 @@ function animate() {
 }
 
 animate();
+
+const toggleControlsBtn = document.createElement('button');
+toggleControlsBtn.id = 'toggleControlsBtn';
+toggleControlsBtn.textContent = '?';
+document.body.appendChild(toggleControlsBtn);
+
+const controlsOverlay = document.createElement('div');
+controlsOverlay.id = 'help-overlay';
+controlsOverlay.className = 'help-overlay';
+controlsOverlay.style.display = 'none';
+document.body.appendChild(controlsOverlay);
+
+const controlsPanel = document.createElement('div');
+controlsPanel.className = 'help-content';
+controlsPanel.innerHTML = `
+  <h2>Basketball Game Controls</h2>
+  <div class="help-section">
+    <h3>Movement</h3>
+    <p><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> Move basketball</p>
+  </div>
+  <div class="help-section">
+    <h3>Shooting</h3>
+    <p><kbd>W</kbd><kbd>S</kbd> Adjust shot power</p>
+    <p><kbd>SPACE</kbd> Shoot basketball</p>
+    <p><kbd>R</kbd> Reset ball to center</p>
+  </div>
+  <div class="help-section">
+    <h3>Camera</h3>
+    <p><kbd>O</kbd> Toggle camera controls</p>
+  </div>
+  <div class="help-section">
+    <h3>Scoring</h3>
+    <p>• Shots = 2 points</p>
+    <p>• All shots are tracked and counted</p>
+  </div>
+  <button id="help-close">Close</button>
+`;
+controlsOverlay.appendChild(controlsPanel);
+
+toggleControlsBtn.onclick = () => {
+  controlsOverlay.style.display = 'flex';
+};
+const closeBtn = controlsPanel.querySelector('#help-close');
+closeBtn.onclick = () => {
+  controlsOverlay.style.display = 'none';
+};

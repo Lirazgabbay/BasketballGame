@@ -1,0 +1,90 @@
+.help-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .help-content {
+    background: #111;
+    color: white;
+    padding: 24px 32px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: left;
+    position: relative;
+    font-family: sans-serif;
+    font-size: 16px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .help-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+  
+  .help-section {
+    margin-bottom: 20px;
+  }
+  
+  .help-section h3 {
+    color: #ffffff;
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+  
+  .help-section p {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  
+  .help-content kbd {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin: 0 2px;
+    font-size: 12px;
+    font-family: monospace;
+  }
+  
+  #help-close {
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 32px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  #toggleControlsBtn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    z-index: 10010;
+    background: #0066cc;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  } 
