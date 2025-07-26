@@ -378,6 +378,10 @@ cssFiles.forEach(file => {
     document.head.appendChild(linkElement);
 });
 
+// Load sound effects
+const shotHitSound = new Audio('src/sounds/shot_hit.mp3');
+const shotMissSound = new Audio('src/sounds/shot_miss.mp3');
+
 const statsPanel = document.createElement('div');
 statsPanel.id = 'stats-panel';
 document.body.appendChild(statsPanel);
@@ -776,6 +780,7 @@ function checkRimCollision() {
                 shotScored = true;
                 shotsMade++;
                 totalScore += 2;  
+                shotHitSound.play();  // Play hit sound
                 showMessage(`SHOT MADE!`, true);
                 console.log(`Score: ${totalScore}`);
                 console.log(`Shot Made! Total Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
@@ -907,6 +912,7 @@ function animate() {
         basketballGroup.position.y = GROUND_Y;
         if (ballPhysicsVelocity.y < 0) {
             if (isShooting && !shotScored) {
+                shotMissSound.play();  // Play miss sound
                 showMessage("MISSED SHOT", false);
                 shotScored = true;
             }
