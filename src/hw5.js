@@ -369,6 +369,34 @@ let shotAttempts = 0;
 let shotsMade = 0;
 let totalScore = 0;
 
+// Add all CSS files from styles folder
+const cssFiles = ['stats-panel.css', 'instructions.css', 'shot-messages.css', 'power-meter.css'];
+cssFiles.forEach(file => {
+    const linkElement = document.createElement('link');
+    linkElement.rel = 'stylesheet';
+    linkElement.href = `src/styles/${file}`;
+    document.head.appendChild(linkElement);
+});
+
+const statsPanel = document.createElement('div');
+statsPanel.id = 'stats-panel';
+document.body.appendChild(statsPanel);
+
+function updateStatsDisplay() {
+    const accuracy = shotAttempts > 0 ? ((shotsMade / shotAttempts) * 100).toFixed(1) : '0.0';
+    statsPanel.innerHTML = `
+        <h3>Game Stats:</h3>
+        <ul>
+            <li>Total Score: ${totalScore}</li>
+            <li>Shots Made: ${shotsMade}</li>
+            <li>Shot Attempts: ${shotAttempts}</li>
+            <li>Shooting Percentage: ${accuracy}%</li>
+        </ul>
+    `;
+}
+
+updateStatsDisplay();
+
 // Create power meter UI
 const powerMeterContainer = document.createElement('div');
 powerMeterContainer.className = 'power-meter-container';
@@ -384,8 +412,8 @@ document.body.appendChild(powerMeterContainer);
 
 /** Updates the power meter UI to reflect current shot power level. */
 function updatePowerMeter() {
-  powerMeterBar.style.width = (shotPower * 100) + '%';
-  powerMeterLabel.innerText = 'Power: ' + Math.round(shotPower * 100) + '%';
+    powerMeterBar.style.width = (shotPower * 100) + '%';
+    powerMeterLabel.innerText = 'Power: ' + Math.round(shotPower * 100) + '%';
 }
 
 /** Creates the basketball with realistic textures and seam details. */
@@ -603,18 +631,17 @@ let isOrbitEnabled = true;
 // Instructions display
 const instructionsElement = document.createElement('div');
 instructionsElement.id = 'instructions-panel';
-instructionsElement.style.position = 'absolute';
 instructionsElement.innerHTML = `
-  <h3>Controls:</h3>
-  <ul>
-    <li>O - Toggle Orbit Camera</li>
-    <li>← → - Move left/right (HW06)</li>
-    <li>↑ ↓ - Move forward/backward (HW06)</li>
-    <li>W - - Move up (HW06)</li>
-    <li>S - Move down (HW06)</li>
-    <li>Spacebar - Shoot basketball (HW06)</li>
-    <li>R - Reset ball position (HW06)</li>
-  </ul>
+    <h3>Controls:</h3>
+    <ul>
+        <li>O - Toggle Orbit Camera</li>
+        <li>← → - Move left/right (HW06)</li>
+        <li>↑ ↓ - Move forward/backward (HW06)</li>
+        <li>W - - Move up (HW06)</li>
+        <li>S - Move down (HW06)</li>
+        <li>Spacebar - Shoot basketball (HW06)</li>
+        <li>R - Reset ball position (HW06)</li>
+    </ul>
 `;
 document.body.appendChild(instructionsElement);
 
@@ -690,12 +717,7 @@ function startShotTimeout() {
 // Add after UI elements but before game logic
 let shotScored = false;  // Track if current shot was scored
 
-// Add CSS link
-const shotMessagesStyle = document.createElement('link');
-shotMessagesStyle.rel = 'stylesheet';
-shotMessagesStyle.href = 'src/shot-messages.css';
-document.head.appendChild(shotMessagesStyle);
-
+// Create shot message container
 const messageDiv = document.createElement('div');
 messageDiv.id = 'messageDiv';
 document.body.appendChild(messageDiv);
@@ -717,6 +739,7 @@ function shootBasketball() {
   shotScored = false;  // Reset for new shot
   shotAttempts++; 
   console.log(`Shot Attempted! Total Attempts: ${shotAttempts}, Shots Made: ${shotsMade}`);
+  updateStatsDisplay(); 
   const targetRim = findNearestRim();
   ballPhysicsVelocity = calculateShotVelocity(targetRim, shotPower);
   // Stop any existing movement
@@ -735,6 +758,7 @@ function resetBasketball() {
     updatePowerMeter();
     clearShotTimeout();
     console.log(`Stats Reset - Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
+    updateStatsDisplay();  
 }
 
 // Update checkRimCollision to not reset automatically
@@ -755,6 +779,7 @@ function checkRimCollision() {
                 showMessage(`SHOT MADE!`, true);
                 console.log(`Score: ${totalScore}`);
                 console.log(`Shot Made! Total Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
+                updateStatsDisplay(); 
             }
             return 'scored';
         } else if (dy > -0.3 && dy < 0.3) {
