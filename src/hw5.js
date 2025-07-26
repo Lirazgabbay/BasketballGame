@@ -422,6 +422,8 @@ const RIM_POSITIONS = [
 let shotAttempts = 0;
 let shotsMade = 0;
 let totalScore = 0;
+let previousShotMade = false;
+let bonuses = { combo: 0 };
 
 // Add all CSS files from styles folder
 const cssFiles = ['stats-panel.css', 'shot-messages.css', 'power-meter.css', 'controls-panel.css'];
@@ -449,6 +451,7 @@ function updateStatsDisplay() {
             <li>Shots Made: ${shotsMade}</li>
             <li>Shot Attempts: ${shotAttempts}</li>
             <li>Shooting Percentage: ${accuracy}%</li>
+            <li>Combo Bonuses: ${bonuses.combo}</li>
         </ul>
     `;
 }
@@ -850,20 +853,31 @@ function checkRimCollision() {
                 shotsMade++;
                 totalScore += 2;
                 
+                // Check for combo bonus
+                let messageText = "SHOT MADE!";
+                if (previousShotMade) {
+                    bonuses.combo++;
+                    totalScore += 1;
+                    messageText = "SHOT MADE! + COMBO BONUS!";
+                }
+                
                 // Update team-specific score
                 if (rim.team === 'home') {
                     homeScore += 2;
-                    showMessage(`SHOT MADE!`, true);
                 } else {
                     guestScore += 2;
-                    showMessage(`SHOT MADE!`, true);
                 }
+                
+                showMessage(messageText, true);
                 
                 shotHitSound.play();
                 console.log(`Score: Home ${homeScore} - Guest ${guestScore}`);
                 console.log(`Shot Made! Total Score: ${totalScore}, Attempts: ${shotAttempts}, Made: ${shotsMade}, Percentage: ${((shotsMade/shotAttempts)*100).toFixed(1)}%`);
                 updateScoreboard();
                 updateStatsDisplay();
+                
+                // Update previousShotMade for next shot
+                previousShotMade = true;
             }
             return 'scored';
         } else if (dy > -0.3 && dy < 0.3) {
@@ -968,6 +982,8 @@ function animate() {
                 shotMissSound.play();  // Play miss sound
                 showMessage("MISSED SHOT", false);
                 shotScored = true;
+                // Update previousShotMade for next shot
+                previousShotMade = false;
             }
             // Bounce physics
             ballPhysicsVelocity.y = Math.abs(ballPhysicsVelocity.y) * 0.35;
@@ -1098,6 +1114,7 @@ controlsPanel.innerHTML = `
   <div class="help-section">
     <h3>Scoring</h3>
     <p>• Shots = 2 points</p>
+    <p>• Combo bonus: +1 point for consecutive shots</p>
     <p>• All shots are tracked and counted</p>
   </div>
   <button id="help-close">Close</button>
